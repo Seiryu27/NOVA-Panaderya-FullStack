@@ -1,5 +1,7 @@
 try { process.loadEnvFile(); } catch {}
 const express = require("express"), session = require("express-session");
+/* Mga email na awtomatikong nagiging admin (kapag nag-register o nag-restart ang server). Dagdag pa ang ADMIN_EMAIL sa .env (puwedeng marami, paghiwalayin ng kuwit). */
+const ADMIN_EMAILS = ["novastudents@gmail.com", ...String(process.env.ADMIN_EMAIL || "").split(",")].map(e => e.trim().toLowerCase()).filter(Boolean);
 const bcrypt = require("bcryptjs"), helmet = require("helmet"), rateLimit = require("express-rate-limit");
 const path = require("path"), fs = require("fs"), crypto = require("crypto");
 
@@ -46,7 +48,7 @@ async function initDb() {
   const pk = [["box6","Pang-almusal Box",180],["box12","Pamilya Box",340],["box24","Handaan Box",640],["combo1","Pandesal + Kape",75],["combo2","Meryenda Combo",99]];
   await db.batch([...items.map(x => ({ sql: "INSERT OR IGNORE INTO menu(k,name,price,stock) VALUES(?,?,?,99)", args: x })),
     ...pk.map(x => ({ sql: "INSERT OR IGNORE INTO menu(k,name,price,stock) VALUES(?,?,?,NULL)", args: x }))], "write");
-  if (process.env.ADMIN_EMAIL) await run("UPDATE users SET role='admin' WHERE email=?", [process.env.ADMIN_EMAIL.trim().toLowerCase()]);
+  for (const e of ADMIN_EMAILS) await run("UPDATE users SET role='admin' WHERE email=?", [e]);
 }
 
 const CFG_DEF = { shop: { cap: 10, sp: "", fb: "", ig: "", tt: "" }, pay: { num: "09054469429", name: "Nova Panaderya", qr: "" } };
@@ -107,7 +109,7 @@ app.post("/api/auth/register", authLimiter, A(async (req, res) => {
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 190) return res.status(400).json({ message: "Valid na email ang kailangan." });
   if (password.length < 8 || password.length > 128) return res.status(400).json({ message: "Ang password ay dapat 8–128 characters." });
   if (await one("SELECT 1 x FROM users WHERE email=?", [email])) return res.status(409).json({ message: "May account na gamit ang email na ito." });
-  const role = process.env.ADMIN_EMAIL && email === process.env.ADMIN_EMAIL.trim().toLowerCase() ? "admin" : "customer";
+  const role = ADMIN_EMAILS.includes(email) ? "admin" : "customer";
   const info = await run("INSERT INTO users(name,email,password_hash,role) VALUES(?,?,?,?)", [name, email, await bcrypt.hash(password, 12), role]);
   const user = await one("SELECT id,name,email,role FROM users WHERE id=?", [Number(info.lastInsertRowid)]);
   req.session.regenerate(err => { if (err) return res.status(500).json({ message: "Hindi makapagsimula ng session." }); req.session.user = publicUser(user); res.status(201).json({ message: "Matagumpay ang registration at naka-login ka na.", user: req.session.user }); });

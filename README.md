@@ -7,7 +7,7 @@ Storefront (animated 3D) + Express API + Turso/SQLite. Ang server na ang nagkaka
 2. `npm install`
 3. Kopyahin ang `.env.example` papuntang `.env`, ilagay ang `SESSION_SECRET` at ang `ADMIN_EMAIL` mo. Iwanang blangko ang `TURSO_*`: lokal na file (`data/nova.sqlite`) ang gagamitin.
 4. `npm start` → http://localhost:3000
-5. Mag-register gamit ang `ADMIN_EMAIL` para maging admin (lalabas ang **Admin** button).
+5. Mag-register gamit ang `novastudents@gmail.com` (built-in admin) o ang `ADMIN_EMAIL` mo para maging admin (lalabas ang **Admin** button).
 
 ## Online (Render Free) nang hindi nawawala ang data
 Ephemeral ang filesystem ng Render Free, kaya gumamit ng libreng Turso database (walang credit card).
